@@ -10,6 +10,7 @@ import {
   useStyle as useStyle$,
 } from "./deps.ts";
 import type { FC, JSXElement, NJSX, TApp, TObject, TRet } from "./deps.ts";
+import { toElem } from "./hx.ts";
 import { router } from "./hx.ts";
 import g_page from "@hxp/pages";
 
@@ -29,7 +30,7 @@ async function genRoute() {
     for (const path in route) {
       const mod = await import("@hxp/" + route[path]);
       if (path.startsWith("/_layout")) custom.layout = mod.default;
-      else module[path] = mod;
+      else module[path] = mod.default;
     }
   } else {
     const route = g_page as TObject;
@@ -103,13 +104,10 @@ export class HxPage extends NHttp {
     const App = this.#App;
     const { module, custom } = await genRoute();
     for (const path in module) {
-      const mod = module[path];
-      const comp = mod.default ?? mod;
-      const renderPage = () => {
-        return custom.layout ? n(custom.layout, null, n(comp)) : n(comp);
-      };
-      this.get(path, () => n(App, null, renderPage()) as JSXElement);
-      this.get("/__page__" + path, () => renderPage());
+      const elem = toElem(module[path]);
+      const page = custom.layout ? n(custom.layout, null, elem) : elem;
+      this.get(path, () => n(App, null, page) as JSXElement);
+      this.get("/__page__" + path, () => page);
     }
     this.use(router);
     this.listen(opts as TAny);
