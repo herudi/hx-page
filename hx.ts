@@ -1,4 +1,4 @@
-import { FC, n, Router, TRet } from "./deps.ts";
+import { FC, Handler, n, Router, TRet } from "./deps.ts";
 export const ANY_METHODS = [
   "GET",
   "POST",
@@ -7,21 +7,32 @@ export const ANY_METHODS = [
   "PATCH",
 ] as const;
 export const router = new Router();
-type FCArray = Array<FC<TRet> | FC<TRet>[]>;
-type HXC = string | FC<TRet> | FCArray;
+type FCHandler = FC<TRet> | { wares: Handler[] };
+type FCHandlers = Array<FCHandler | FCHandler[]>;
+type HXC = string | FCHandler | FCHandlers;
 let idx = -1;
 const isFn = <T>(v: T) => typeof v === "function";
 const isArr = Array.isArray;
-const toChild = (el: TRet) => isFn(el) ? n(el, null) : el;
-export const toElem = (el: TRet | TRet[]) => {
+const toElem = (el: TRet) => isFn(el) ? n(el) : el;
+export const mergeElem = (el: TRet | TRet[]) => {
   if (isArr(el)) {
-    return el.length === 1 ? toChild(el[0]) : el.reduceRight((acc, curr) => {
-      curr = toChild(curr);
-      (curr.props ??= {}).children = toChild(acc);
-      return curr;
+    const wares = [] as TRet[], elems = [] as TRet[];
+    el.forEach((el) => {
+      if (el?.wares !== void 0) wares.push(el.wares);
+      else elems.push(el);
     });
+    return {
+      elem: elems.length === 1
+        ? toElem(elems[0])
+        : elems.reduceRight((acc, curr) => {
+          curr = toElem(curr);
+          (curr.props ??= {}).children = toElem(acc);
+          return curr;
+        }),
+      wares: wares.flat(),
+    };
   }
-  return toChild(el);
+  return { elem: toElem(el), wares: [] };
 };
 class Hx {
   constructor() {
@@ -37,8 +48,8 @@ class Hx {
           prefix = "";
         }
         const path = "/hxp" + idx--;
-        const elem = toElem(el);
-        router.add(method, path + prefix, () => elem);
+        const { elem, wares } = mergeElem(el);
+        router.add(method, path + prefix, wares, () => elem);
         return path;
       };
     });

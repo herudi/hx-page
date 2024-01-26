@@ -9,35 +9,47 @@ import {
   useRequestEvent,
   useStyle as useStyle$,
 } from "./deps.ts";
-import type { FC, JSXElement, NJSX, TApp, TObject, TRet } from "./deps.ts";
-import { toElem } from "./hx.ts";
-import { router } from "./hx.ts";
-import g_page from "@hxp/pages";
+import type {
+  FC,
+  Handlers,
+  JSXElement,
+  NJSX,
+  TApp,
+  TObject,
+  TRet,
+} from "./deps.ts";
+import { mergeElem, router } from "./hx.ts";
+import g_page from "hxp/pages";
 
 export { hx } from "./hx.ts";
 export * from "./deps.ts";
 const T_T = Date.now();
-const isDeno = typeof Deno !== "undefined";
-const isDev = isDeno
-  ? Deno.args?.includes("--dev")
-  // deno-lint-ignore ban-ts-comment
-  // @ts-ignore
-  : process.argv?.includes("--dev");
+const isDev = Deno.args.includes("--dev");
+
+function filterModule(
+  path: string,
+  data: TAny,
+  { custom, module }: TObject = {},
+) {
+  if (path.startsWith("/_layout")) custom.layout = data;
+  else if (path.startsWith("/_404")) custom.not_found = data;
+  else if (path.startsWith("/_error")) custom.error = data;
+  else module[path] = data;
+  return { custom, module };
+}
 async function genRoute() {
   const custom = {} as TObject, module = {} as TObject;
   if (g_page === void 0) {
     const route = await getRouteFromDir("pages");
     for (const path in route) {
-      const mod = await import("@hxp/" + route[path]);
-      if (path.startsWith("/_layout")) custom.layout = mod.default;
-      else module[path] = mod.default;
+      const mod = await import("hxp/" + route[path]);
+      filterModule(path, mod.default, { custom, module });
     }
   } else {
     const route = g_page as TObject;
     for (const path in route) {
       const mod = route[path];
-      if (path.startsWith("/_layout")) custom.layout = mod;
-      else module[path] = mod;
+      filterModule(path, mod, { custom, module });
     }
   }
   return { module, custom };
@@ -60,11 +72,13 @@ export interface HxPageOptions extends TApp {
 }
 export class HxPage extends NHttp {
   #App!: FC;
+  #htmx!: NJSX.ScriptHTMLAttributes;
   constructor(
     { target, htmx = {}, ...rest }: HxPageOptions = {},
   ) {
     super(rest);
     htmx.src ??= "https://unpkg.com/htmx.org@1.9.10";
+    this.#htmx = htmx;
     target ??= def_target_app;
     if (isDev) {
       this.#App = ({ children }) =>
@@ -77,7 +91,6 @@ export class HxPage extends NHttp {
     }
     this.engine(renderToHtml).use(
       serveStatic("public", { prefix: "/assets", etag: true }),
-      htmx$(htmx),
       (rev, next) => {
         rev.hxPageTarget = target as string;
         return next();
@@ -101,16 +114,24 @@ export class HxPage extends NHttp {
 
   async serve(opts: Deno.ServeOptions = {}) {
     opts.port ??= 8000;
+    this.use(htmx$(this.#htmx));
     const App = this.#App;
     const { module, custom } = await genRoute();
+    let lay: TObject | undefined;
+    if (custom.layout) {
+      lay = mergeElem(custom.layout);
+      if (lay.wares.length) this.use(lay.wares);
+    }
     for (const path in module) {
-      const elem = toElem(module[path]);
-      const page = custom.layout ? n(custom.layout, null, elem) : elem;
-      this.get(path, () => n(App, null, page) as JSXElement);
-      this.get("/__page__" + path, () => page);
+      const { elem, wares } = mergeElem(module[path]);
+      const page = lay ? n(lay.elem.type, lay.elem.props, elem) : elem;
+      this.get(path, wares, () => n(App, null, page) as JSXElement);
+      this.get("/__page__" + path, wares, () => page);
     }
     this.use(router);
-    this.listen(opts as TAny);
+    if (custom.error) this.onError((error) => n(custom.error, { error }));
+    if (custom.not_found) this.on404(() => n(custom.not_found, null));
+    this.listen(opts as TRet);
   }
 }
 
@@ -137,4 +158,8 @@ export const useStyle = (
     return null;
   }
   return useStyle$(css, { position: options.position });
+};
+
+export const wares = (...middlewares: Handlers) => {
+  return { wares: middlewares.flat() };
 };
