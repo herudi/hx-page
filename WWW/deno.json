@@ -1,0 +1,25 @@
+{
+  "tasks": {
+    "dev": "deno run -A https://raw.githubusercontent.com/herudi/hx-page/master/gen.ts --dev && deno run -A --watch main.ts --dev",
+    "pages": "deno run -A https://raw.githubusercontent.com/herudi/hx-page/master/gen.ts",
+    "start": "deno task pages && deno run -A main.ts"
+  },
+  "imports": {
+    "hxp": "https://raw.githubusercontent.com/herudi/hx-page/master/mod.ts",
+    "hxp/jsx-runtime": "https://raw.githubusercontent.com/herudi/hx-page/master/jsx-runtime.ts",
+    "hxp/pages": "./pages.ts",
+    "hxp/pages/": "./pages/"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "hxp"
+  },
+  "deploy": {
+    "project": "bff16e7b-3726-4f63-895f-b5d8bf1aa7e1",
+    "exclude": [
+      "**/node_modules"
+    ],
+    "include": [],
+    "entrypoint": "main.ts"
+  }
+}

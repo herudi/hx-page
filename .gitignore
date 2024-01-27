@@ -1,6 +1,5 @@
 /pages
 /deno.json
-/deno.lock
+deno.lock
 /main.ts
 /pages.ts
-/myapp

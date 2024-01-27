@@ -1,10 +1,15 @@
-import { FC, Helmet, Link, NJSX } from "hxp";
+import { FC, Helmet, NJSX, useRequestEvent } from "hxp";
 
 const Anchor: FC<NJSX.AnchorHTMLAttributes> = (props) => (
   <a class="underline font-bold italic" {...props}>{props.children}</a>
 );
 
 const Home: FC = () => {
+  const { request, response } = useRequestEvent();
+  const agent = request.headers.get("user-agent");
+  if (agent && agent.startsWith("Deno")) {
+    return response.redirect("/new");
+  }
   return (
     <>
       <Helmet>
@@ -25,27 +30,15 @@ const Home: FC = () => {
               Deno
             </Anchor>.
           </p>
-          <div class="mt-10">
-            <Link
-              href="/todo"
-              class="text-white bg-blue-500 border-0 py-2 px-8 focus:outline-none hover:bg-blue-600 rounded text-lg"
-            >
-              Todo {">>"}
-            </Link>
-            <label class="m-2"></label>
-            <a
-              href="/doc"
-              class="text-white bg-blue-500 border-0 py-2 px-8 focus:outline-none hover:bg-blue-600 rounded text-lg"
-            >
-              Doc {">>"}
-            </a>
-          </div>
-          <div class="mx-auto leading-relaxed mt-10">
-            <span>
-              Try to edit in{" "}
-              <span class="underline italic">pages/index.tsx</span>
-            </span>
-          </div>
+          <p
+            class="mx-auto mt-10 p-5"
+            style={{ backgroundColor: "black", borderRadius: 10 }}
+          >
+            deno run -Ar https://hxp.deno.dev my_app
+          </p>
+          <p class="mt-20 text-2xl mx-auto leading-relaxed">
+            Doc (<i>soon...</i>)
+          </p>
         </div>
       </div>
     </>
