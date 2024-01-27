@@ -1,11 +1,17 @@
-import { existsSync } from "https://deno.land/std@0.213.0/fs/mod.ts";
 const args = Deno.args;
 const dir = args[args.length - 1];
 if (dir === void 0) {
   const message = "cannot find project name";
   throw new TypeError(message);
 }
-if (existsSync(dir)) {
+const isExist = () => {
+  try {
+    Deno.statSync(dir);
+    return true;
+  } catch { /* failure */ }
+  return false;
+};
+if (isExist()) {
   console.log(dir, "is exists.");
   console.log("try with other name");
 } else {

@@ -9,15 +9,15 @@ type Template = {
 const cache = {} as {
   arr: Template[];
   file: Record<string, string>;
+  script: string;
 };
 
 const app = new HxPage();
 
 app.get("/new", (rev) => {
-  rev.response.type("application/typescript");
-  return Deno.readTextFileSync("./new.ts");
+  rev.response.type("ts");
+  return cache.script ??= Deno.readTextFileSync("./new.ts");
 });
-
 app.get("/new/template", async () => {
   if (cache.arr !== void 0) return cache.arr;
   const result = walk("template");
