@@ -1,0 +1,19 @@
+{
+  "tasks": {
+    "dev": "deno run -A https://deno.land/x/hxp@0.0.1-rc.3/gen.ts --dev && deno run -A --watch main.ts --dev",
+    "pages": "deno run -A https://deno.land/x/hxp@0.0.1-rc.3/gen.ts",
+    "start": "deno task pages && deno run -A main.ts"
+  },
+  "imports": {
+    "hxp": "https://deno.land/x/hxp@0.0.1-rc.3/mod.ts",
+    "hxp/jsx-runtime": "https://deno.land/x/hxp@0.0.1-rc.3/jsx-runtime.ts",
+    "hxp/wares": "https://deno.land/x/hxp@0.0.1-rc.3/wares.ts",
+    "hxp/wares/": "https://deno.land/x/hxp@0.0.1-rc.3/wares/",
+    "hxp/pages": "./pages.ts",
+    "hxp/pages/": "./pages/"
+  },
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "hxp"
+  }
+}

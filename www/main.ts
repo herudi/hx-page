@@ -1,4 +1,4 @@
-import { etag, HxPage } from "hxp";
+import { HxPage } from "hxp";
 import { walk } from "https://deno.land/std@0.213.0/fs/mod.ts";
 
 type Template = {
@@ -32,5 +32,4 @@ app.get("/new/template/:slug*", ({ params }) => {
   const name = "./template/" + params.slug.join("/");
   return cache.file[name] ??= Deno.readTextFileSync(name);
 });
-app.use(etag());
 app.serve();

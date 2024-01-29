@@ -3,7 +3,7 @@ let out = "";
 const isDev = Deno.args?.includes("--dev");
 if (isDev) {
   out += "// please, don't remove or modify this file.\n";
-  out += "export default void 0;";
+  out += "export default void 0;\n";
 } else {
   const route = await getRouteFromDir("pages");
   const arr = Object.keys(route);

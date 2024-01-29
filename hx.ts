@@ -1,4 +1,5 @@
-import { FC, Handler, n, Router, TRet } from "./deps.ts";
+import { type FC, type Handler, n, Router, type TRet } from "./deps.ts";
+import type { Wares } from "./wares.ts";
 export const ANY_METHODS = [
   "GET",
   "POST",
@@ -12,12 +13,14 @@ type FCHandlers = Array<FCHandler | FCHandler[]>;
 type HXC = string | FCHandler | FCHandlers;
 let idx = -1;
 const isFn = <T>(v: T) => typeof v === "function";
-const isArr = Array.isArray;
-const toElem = (el: TRet) => isFn(el) ? n(el) : el;
-export const mergeElem = (el: TRet | TRet[]) => {
-  if (isArr(el)) {
-    const wares = [] as TRet[], elems = [] as TRet[];
-    el.forEach((el) => {
+export const isArray = Array.isArray;
+const toElem = (el: FC<TRet> | ChildNode) => isFn(el) ? n(el as FC) : el;
+type DataMergeElem = ChildNode | FC<TRet> | Wares | TRet;
+export const mergeElem = (el: DataMergeElem | DataMergeElem[]) => {
+  if (isArray(el)) {
+    el = el.flat(10);
+    const wares = [] as Handler[], elems = [] as TRet[];
+    el.forEach((el: TRet) => {
       if (el?.wares !== void 0) wares.push(el.wares);
       else elems.push(el);
     });
@@ -29,7 +32,7 @@ export const mergeElem = (el: TRet | TRet[]) => {
           (curr.props ??= {}).children = toElem(acc);
           return curr;
         }),
-      wares: wares.flat(),
+      wares: wares.flat(10),
     };
   }
   return { elem: toElem(el), wares: [] };
